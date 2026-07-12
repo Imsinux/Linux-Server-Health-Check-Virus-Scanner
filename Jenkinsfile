@@ -67,12 +67,12 @@ pipeline {
 
                     // Check sshpass
                     sh '''
-                        if ! command -v sshpass &>/dev/null; then
-                            echo "❌ sshpass not found on Jenkins agent!"
-                            echo "   Run: sudo apt-get install -y sshpass"
+                        if ! command -v sshpass >/dev/null 2>&1; then
+                            echo "sshpass not found on Jenkins agent!"
+                            echo "Run: sudo apt-get install -y sshpass"
                             exit 1
                         fi
-                        echo "✅ sshpass: $(sshpass -V 2>&1 | head -1)"
+                        echo "sshpass OK: $(sshpass -V 2>&1 | head -1)"
                     '''
 
                     // Check servers.json
@@ -204,9 +204,10 @@ pipeline {
                     ls -lh ${env.REPORT_DEST}/ 2>/dev/null || echo "(empty)"
                     echo ""
                     echo "Server statuses:"
-                    for f in ${env.REPORT_DEST}/*_status.txt; do
-                        [ -f "\$f" ] && cat "\$f" && echo "---"
-                    done
+                    find ${env.REPORT_DEST}/ -name '*_status.txt' 2>/dev/null | while IFS= read -r f; do
+                        cat "\$f"
+                        echo "---"
+                    done || true
                 """
             }
         }
