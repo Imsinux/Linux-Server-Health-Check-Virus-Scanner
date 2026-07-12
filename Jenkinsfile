@@ -84,6 +84,9 @@ pipeline {
                     // Prepare reports dir
                     sh "mkdir -p ${env.REPORT_DEST}"
 
+                    // Clean reports dir — remove all old files from previous builds
+                    sh "rm -rf ${env.REPORT_DEST} && mkdir -p ${env.REPORT_DEST}"
+
                     // Make scripts executable
                     sh "chmod +x ${WORKSPACE}/jenkins/deploy_and_run.sh"
                 }

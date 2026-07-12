@@ -120,24 +120,20 @@ fi
 log "Downloading reports from ${REMOTE_HOST}..."
 mkdir -p "${REPORT_DEST}"
 
-# Download latest HTML
+# Download only the latest HTML report
 scp_get "${REMOTE_OUTPUT_DIR}/latest.html" \
     "${REPORT_DEST}/${REMOTE_LABEL}_latest.html" || log_warn "Could not download latest.html"
 
-# Download all timestamped reports from this run (newest 2)
-REMOTE_FILES=$(ssh_run "ls -t ${REMOTE_OUTPUT_DIR}/healthcheck_*.html 2>/dev/null | head -2" || true)
-for rf in $REMOTE_FILES; do
-    BASENAME=$(basename "$rf")
-    scp_get "$rf" "${REPORT_DEST}/${REMOTE_LABEL}_${BASENAME}" \
-        || log_warn "Could not download $BASENAME"
-done
+# Download only the latest JSON report
+scp_get "${REMOTE_OUTPUT_DIR}/latest.json" \
+    "${REPORT_DEST}/${REMOTE_LABEL}_latest.json" || log_warn "Could not download latest.json"
 
-# Download JSON
-REMOTE_JSON=$(ssh_run "ls -t ${REMOTE_OUTPUT_DIR}/healthcheck_*.json 2>/dev/null | head -1" || true)
-if [ -n "$REMOTE_JSON" ]; then
-    scp_get "$REMOTE_JSON" "${REPORT_DEST}/${REMOTE_LABEL}_latest.json" \
-        || log_warn "Could not download JSON report"
-fi
+# Clean up old timestamped files on the remote server — keep only the newest 1
+ssh_run "
+    cd ${REMOTE_OUTPUT_DIR} 2>/dev/null || exit 0
+    ls -t healthcheck_*.html 2>/dev/null | tail -n +2 | xargs rm -f
+    ls -t healthcheck_*.json 2>/dev/null | tail -n +2 | xargs rm -f
+" || true
 
 log_ok "Reports saved to ${REPORT_DEST}/"
 
