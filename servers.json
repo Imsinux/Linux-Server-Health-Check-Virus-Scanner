@@ -22,13 +22,13 @@
     "cred_id": "zabbixsrv",
     "scan_dirs": "/home /tmp /etc /var/www",
     "description": "Server Zabbix"
-  },
-  {
-    "host": "192.168.101.62",
-    "label": "python-server",
-    "user": "root",
-    "cred_id": "pythonsrv",
-    "scan_dirs": "/home /tmp /etc /var/www",
-    "description": "Server Python"
   }
+#  {
+#    "host": "192.168.101.62",
+#    "label": "python-server",
+#    "user": "root",
+#    "cred_id": "pythonsrv",
+#    "scan_dirs": "/home /tmp /etc /var/www",
+#    "description": "Server Python"
+#  }
 ]
