@@ -1,0 +1,13 @@
+# Python 3.6+ only — all dependencies are standard library or system tools
+# No pip packages required!
+#
+# SYSTEM REQUIREMENTS (installed via install.sh):
+#   - clamav         (virus scanner: sudo apt-get install clamav)
+#   - clamav-daemon  (optional, for daemon mode)
+#   - python3        (3.6+)
+#
+# OPTIONAL (for faster scanning):
+#   pyclamd          (pip3 install pyclamd — connects to clamd daemon)
+#
+# System tools used (all standard on Linux):
+#   ps, df, ip, ss, systemctl, who, last, find, grep, uptime
