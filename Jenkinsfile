@@ -27,11 +27,6 @@ pipeline {
 
     // ── Configurable parameters ───────────────────────────────────────────────
     parameters {
-        string(
-            name: 'ALERT_EMAIL',
-            defaultValue: 'admin@example.com',
-            description: 'Email to notify when a virus is detected'
-        )
         booleanParam(
             name: 'SKIP_VIRUS_SCAN',
             defaultValue: false,
@@ -139,10 +134,12 @@ pipeline {
 
                                         if (exitCode == 2) {
                                             // Virus found — mark build unstable but continue
-                                            unstable("⚠️  VIRUS DETECTED on ${s.label}!")
+                                            unstable("VIRUS DETECTED on ${s.label}!")
                                             virusFoundServers << s.label
                                         } else if (exitCode != 0) {
-                                            error("Health check failed on ${s.label} (exit ${exitCode})")
+                                            // Connection or script error — warn but don't kill the build
+                                            unstable("Health check FAILED on ${s.label} (exit ${exitCode}) — check SSH/credentials")
+                                            echo "ERROR on ${s.label}: exit code ${exitCode}. Other servers continue."
                                         }
                                     }
                                 }
@@ -216,46 +213,15 @@ pipeline {
             script {
                 if (env.VIRUS_FOUND_SERVERS) {
                     echo "VIRUS ALERT: Infected servers: ${env.VIRUS_FOUND_SERVERS}"
-                    try {
-                        emailext(
-                            to            : params.ALERT_EMAIL,
-                            subject       : "[VIRUS DETECTED] Server Health Check - ${env.VIRUS_FOUND_SERVERS}",
-                            mimeType      : 'text/html',
-                            body          : """
-                                <h2 style="color:red">Virus Detected!</h2>
-                                <p>The Jenkins health check pipeline found malware on the following servers:</p>
-                                <ul>
-                                  ${env.VIRUS_FOUND_SERVERS.split(',').collect { "<li><strong>${it.trim()}</strong></li>" }.join('')}
-                                </ul>
-                                <p>
-                                  <strong>Build:</strong> <a href="${env.BUILD_URL}">${env.JOB_NAME} #${env.BUILD_NUMBER}</a><br/>
-                                  <strong>Reports:</strong> <a href="${env.BUILD_URL}Health_20Check_20Reports/">View HTML Reports</a>
-                                </p>
-                                <p>Immediate action required. Check /healthcheck/latest.html on each affected server.</p>
-                            """,
-                            attachmentsPattern: 'reports/*_latest.html'
-                        )
-                        echo "Alert email sent to ${params.ALERT_EMAIL}"
-                    } catch (Exception e) {
-                        echo "WARNING: Could not send alert email (SMTP not configured?): ${e.message}"
-                        echo "Configure SMTP at: Manage Jenkins -> System -> Extended E-mail Notification"
-                    }
+                    echo "Check the Health Check Reports in Jenkins sidebar for details."
+                } else {
+                    echo "One or more servers had connection/script errors. Check console output above."
                 }
             }
         }
 
         failure {
-            script {
-                try {
-                    emailext(
-                        to      : params.ALERT_EMAIL,
-                        subject : "[FAILED] Health Check Pipeline - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                        body    : "The health check pipeline failed. View logs: ${env.BUILD_URL}console"
-                    )
-                } catch (Exception e) {
-                    echo "WARNING: Could not send failure email: ${e.message}"
-                }
-            }
+            echo "Pipeline failed. Check console output for details."
         }
 
         success {
