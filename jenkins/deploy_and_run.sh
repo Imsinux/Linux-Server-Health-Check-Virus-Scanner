@@ -12,7 +12,7 @@
 #   SCAN_DIRS         — space-separated dirs to scan
 #   APP_SRC           — local path to healthcheck_app/ (WORKSPACE)
 #   REPORT_DEST       — local dir to save downloaded reports
-#   ALERT_EMAIL       — email to notify on virus detection (optional)
+#   MAX_FILESIZE       — max file size in MB for ClamAV
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
@@ -43,9 +43,18 @@ scp_get() {
 }
 
 # ── Step 1: Connectivity check ────────────────────────────────────────────────
-log "Testing SSH connectivity..."
-if ! ssh_run "echo connected" &>/dev/null; then
-    log_err "Cannot connect to ${REMOTE_HOST}. Check host/credentials."
+log "Testing SSH connectivity to ${REMOTE_USER}@${REMOTE_HOST}..."
+SSH_TEST_OUTPUT=$(sshpass -p "$REMOTE_PASS" ssh $SSH_OPTS "${REMOTE_USER}@${REMOTE_HOST}" "echo connected" 2>&1) || true
+if [ "$SSH_TEST_OUTPUT" != "connected" ]; then
+    log_err "Cannot connect to ${REMOTE_HOST}!"
+    log_err "SSH output: ${SSH_TEST_OUTPUT}"
+    log_err "Possible causes:"
+    log_err "  1. Wrong IP — current: ${REMOTE_HOST}"
+    log_err "  2. Wrong password in Jenkins credential: ${REMOTE_LABEL}"
+    log_err "  3. SSH port is not 22 (add -p PORT to SSH_OPTS)"
+    log_err "  4. Firewall blocking port 22 from Jenkins server"
+    log_err "  5. SSH service not running on ${REMOTE_HOST}"
+    log_err "Test manually: sshpass -p 'PASSWORD' ssh root@${REMOTE_HOST}"
     exit 1
 fi
 log_ok "SSH connection OK."
