@@ -3,7 +3,7 @@
     "host": "192.168.115.72",
     "label": "test-srv",
     "user": "root",
-    "cred_id": "server-test-01",
+    "cred_id": "test-srv",
     "scan_dirs": "/home /var/www /tmp /etc",
     "description": "Production Test Server"
   }
